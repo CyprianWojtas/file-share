@@ -1,0 +1,124 @@
+body
+{
+	font-family: 'Source Sans Pro', sans-serif;
+	font-size: 12px;
+	line-height: 1.25;
+	display: grid;
+	/* grid-template-columns: 1fr 4fr; */
+	grid-template-columns: 1fr 1fr;
+	margin: 0;
+	height: 100vh;
+	overflow: hidden;
+}
+
+.sideMenu, .mainPage
+{
+	overflow: auto;
+	padding: 1rem;
+}
+
+.sideMenu
+{
+	background: #EEE;
+	box-shadow: inset -2rem 0 1rem -2rem #0002;
+}
+
+.dirContents
+{
+	margin-left: 1rem;
+}
+.waiting
+{
+	background: #FF0;
+}
+.processing
+{
+	background: #F66;
+}
+.fileContainer .path
+{
+	margin-top: 1rem;
+	margin-bottom: 0.5rem;
+}
+
+.fileContainer .path button
+{
+	border: none;
+	background: no-repeat;
+	font-size: inherit;
+	font-family: inherit;
+	padding: 0 0.25rem;
+	cursor: pointer;
+}
+.fileContainer .path button:hover,
+.fileContainer .path button:active
+{
+	text-decoration: underline;
+}
+
+.fileContainerItems
+{
+	display: table;
+	width: 100%;
+}
+
+.fileContainerItems .containerHeader
+{
+	display: table-row;
+}
+.fileContainerItems .header
+{
+	display: table-cell;
+	font-weight: bold;
+	text-align: center;
+	padding: 0.25rem 0.5rem;
+}
+.fileContainerItems .header:nth-child(2)
+{
+	text-align: left;
+}
+
+.fileContainerItems .items
+{
+	display: contents;
+}
+
+.directory, .file
+{
+	display: table-row;
+	line-height: 1.5rem;
+	cursor: pointer;
+}
+
+.fileIcon, .fileName, .fileType, .fileSize, .fileModificationDate
+{
+	display: table-cell;
+	padding: 0 0.5rem;
+	border-top: 1px solid #EEE;
+	white-space: nowrap;
+}
+
+.fileType, .fileSize, .fileModificationDate
+{
+	text-align: center;
+}
+.fileIcon
+{
+	text-align: right;
+	padding-right: 0;
+}
+.fileIcon img
+{
+	height: 1rem;
+	vertical-align: top;
+	margin: 0.25rem;
+}
+.fileName button
+{
+	background: none;
+	border: none;
+	font-size: inherit;
+	font-family: inherit;
+	cursor: inherit;
+	padding: 0;
+}
