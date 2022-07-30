@@ -1,0 +1,10 @@
+{
+	"compilerOptions":
+	{
+	  "outDir": "./js",
+	  "allowJs": true,
+	  "target": "es2017",
+	  "moduleResolution": "node"
+	},
+	"include": ["./src/**/*"]
+}

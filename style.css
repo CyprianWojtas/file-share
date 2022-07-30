@@ -83,14 +83,19 @@ body
 	display: contents;
 }
 
-.directory, .file
+.fileContainer .directory,
+.fileContainer .file
 {
 	display: table-row;
 	line-height: 1.5rem;
 	cursor: pointer;
 }
 
-.fileIcon, .fileName, .fileType, .fileSize, .fileModificationDate
+.fileContainer .fileIcon,
+.fileContainer .fileName,
+.fileContainer  .fileType,
+.fileContainer  .fileSize,
+.fileContainer  .fileModificationDate
 {
 	display: table-cell;
 	padding: 0 0.5rem;
@@ -98,22 +103,24 @@ body
 	white-space: nowrap;
 }
 
-.fileType, .fileSize, .fileModificationDate
+.fileContainer .fileType,
+.fileContainer .fileSize,
+.fileContainer .fileModificationDate
 {
 	text-align: center;
 }
-.fileIcon
+.fileContainer .fileIcon
 {
 	text-align: right;
 	padding-right: 0;
 }
-.fileIcon img
+.fileContainer .fileIcon img
 {
 	height: 1rem;
 	vertical-align: top;
 	margin: 0.25rem;
 }
-.fileName button
+.fileContainer .fileName button
 {
 	background: none;
 	border: none;
@@ -121,4 +128,16 @@ body
 	font-family: inherit;
 	cursor: inherit;
 	padding: 0;
+}
+
+#downloadList
+{
+	position: fixed;
+	bottom: 0;
+	right: 2rem;
+	background: #DDD;
+	width: 20rem;
+	padding: 0.5rem;
+	border-radius: 0.5rem 0.5rem 0 0;
+	box-shadow: 0 0 2rem #0002;
 }
