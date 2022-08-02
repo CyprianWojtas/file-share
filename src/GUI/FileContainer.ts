@@ -15,18 +15,16 @@ export default
 class FileContainer extends EventObject<Events>
 {
 	element: HTMLElement;
-	id: string | number;
 
 	private _itemsEl: HTMLElement;
 	private _pathEl: HTMLElement;
 	private _contents: any;
-	private _id: number;
 	private _path: any[];
 
-	constructor(dirContents: { directories?: DirectoryInfo[]; files?: FileInfo[]; } = {}, path: string[] = [], id: string | number = 0)
+	constructor(dirContents: { directories?: DirectoryInfo[]; files?: FileInfo[]; } = {}, path: string[] = [])
 	{
 		super();
-		
+
 		this._itemsEl = createElement("div", { class: "items" });
 		this._pathEl  = createElement("div", { class: "path" });
 
@@ -58,11 +56,9 @@ class FileContainer extends EventObject<Events>
 		});
 
 		this._contents = null;
-		this._id = 0;
 		this._path = [];
 		
 		this.path = path;
-		this.id = id;
 		this.contents = dirContents;
 	}
 
@@ -76,7 +72,7 @@ class FileContainer extends EventObject<Events>
 
 		for (const directory of dirContents?.directories || [])
 			this._itemsEl.append(this.generateDirElement(directory));
-		
+
 		for (const file of dirContents?.files || [])
 			this._itemsEl.append(this.generateFileElement(file));
 	}
@@ -89,7 +85,7 @@ class FileContainer extends EventObject<Events>
 		this._path = newPath;
 
 		this._pathEl.innerHTML = "";
-		
+
 		const pathHomeEl = createNodeTree(
 		{
 			name: "button", listeners: { click: () => this._fireEvent("clickNavigation", []) },

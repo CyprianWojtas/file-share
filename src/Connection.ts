@@ -2,18 +2,29 @@
 
 import EventObject from "./EventObject.js";
 import Networking, { APP_NAME } from "./Networking.js";
-import Shared from "./Shared.js";
+import Shared, { DirectoryInfo } from "./Shared.js";
 
 import * as PeerJS from "peerjs";
+import { toFileSize } from "./Utils.js";
+
+export type requestType = "ping" | "getUsername" | "getShares" | "getFile" | "getDirectory" | "readFile";
+export type dataType    = "username" | "sharesUpdate" | "statusUpdate";
 
 interface Request
 {
 	/** request name */
-	request: string;
+	request: requestType;
 	/** unique id of the request */
 	requestId: number;
 	/** data parsed to the request */
 	data?: any;
+}
+
+export interface Status
+{
+	text: string;
+	title?: string;
+	progress?: number;
 }
 
 /** size of chunk of uploaded data */
@@ -22,9 +33,10 @@ const CHUNK_SIZE: number = 1048576; // 1 MB
 type Events =
 [
 	[ event: "usernameUpdate", callback: (userName: string) => void ],
+	[ event: "statusUpdate", callback: (status: Status) => void ],
+	[ event: "sharesUpdate", callback: (data: DirectoryInfo) => void ],
 	[ event: "close", callback: () => void ],
-	[ event: "disconnected", callback: () => void ],
-	[ event: "sharesUpdate", callback: (data: any) => void ]
+	[ event: "disconnected", callback: () => void ]
 ];
 
 
@@ -35,6 +47,9 @@ class Connection extends EventObject<Events>
 	network: Networking;
 	userName: string = "";
 	peer: string = "";
+
+	status: Status;
+
 	private _requestId: number = 1;
 	private _pendingRequests = {};
 
@@ -50,6 +65,8 @@ class Connection extends EventObject<Events>
 	{
 		super();
 		this.network = network;
+
+		this.status = { text: "", title: "" };
 
 		this.bindDataConnection(dataConnection);
 	}
@@ -76,7 +93,7 @@ class Connection extends EventObject<Events>
 		dataConnection.on("close", () =>
 		{
 			this._fireEvent("close");
-			if (!this.dataConnections.binary && !this.dataConnections.json)
+			if (!this.dataConnections.binary?.open && !this.dataConnections.json?.open)
 				this._fireEvent("disconnected");
 		});
 
@@ -96,6 +113,11 @@ class Connection extends EventObject<Events>
 		const newDataConnection = this.network.peer.connect(this.peer, { metadata: { app: APP_NAME }, reliable : true, serialization: connType });
 		this.bindDataConnection(newDataConnection);
 	}
+
+
+	//=========================//
+	//===== Communitation =====//
+	//=========================//
 
 	async send(data: any, connType = "json")
 	{
@@ -139,13 +161,13 @@ class Connection extends EventObject<Events>
 		console.warn("Recieved unknown data:", data, "from", this.peer);
 	}
 
-	async sendData(dataType: string, data: any)
+	async sendData(dataType: dataType, data: any)
 	{
 		await this.send({ dataType, data });
 	}
 
 	/* Parse incoming data */
-	private async _onData(dataType: string, data: any)
+	private async _onData(dataType: dataType, data: any)
 	{
 		switch(dataType)
 		{
@@ -156,12 +178,19 @@ class Connection extends EventObject<Events>
 			case "sharesUpdate":
 				this._fireEvent("sharesUpdate", data);
 				break;
+			case "statusUpdate":
+				this.status.text  = String(data.text);
+				this.status.title = String(data.title);
+				this.status.progress = parseFloat(data.progress);
+
+				this._fireEvent("statusUpdate", this.status);
+				break;
 			default:
 				console.warn("Recievied unknown data type: ", dataType, data);
 		}
 	}
 
-	async sendRequest(request: string, data?: any): Promise<any>
+	async sendRequest(request: requestType, data?: any): Promise<any>
 	{
 		let requestId = this._requestId++;
 
@@ -290,8 +319,7 @@ class Connection extends EventObject<Events>
 
 		const fileWritable = await fileHandle.createWritable();
 
-		/** @type {?Promise} */
-		let writtingStatus = null;
+		let writtingStatus: Promise<any> | null = null;
 
 		let time = Date.now();
 		let speed = 0;
@@ -303,6 +331,13 @@ class Connection extends EventObject<Events>
 				speed = CHUNK_SIZE / (newTime - time) * 1000;
 			time = newTime;
 
+			this.sendData("statusUpdate",
+			{
+				text: `${ fileInfo.name } — ${ (progress / fileInfo.size * 100 ).toFixed(2) }% (${ toFileSize(speed) }/s)`,
+				title: `${ toFileSize(progress) }/${ toFileSize(fileInfo.size) }`,
+				progress: progress / fileInfo.size
+			});
+
 			callback?.("progress", { current: progress, total: fileInfo.size, speed });
 
 			let data = await this.readFile(path, progress, progress + CHUNK_SIZE);
@@ -312,10 +347,12 @@ class Connection extends EventObject<Events>
 			writtingStatus = fileWritable.write(data);
 		}
 
+		this.sendData("statusUpdate", { text: `${ fileInfo.name } — Saving...`, title: "", progress: 1 });
 		callback?.("savingToFile");
 		
 		await fileWritable.close();
 
+		this.sendData("statusUpdate", { text: "", title: "" });
 		callback?.("finished");
 
 		this._downloading = false;

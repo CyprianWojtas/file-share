@@ -35,7 +35,7 @@ const ADJECTIVES = [
     "Adorable", "Adventurous", "Agreeable", "Alert", "Alive", "Amused",
     "Attractive", "Beautiful", "Better", "Black", "Blue", "Blushing",
     "Brainy", "Brave", "Bright", "Busy", "Calm", "Careful",
-    "Cautious", "Charming", "Cheerful", "Clever", "Clumsy", "Colorful",
+    "Cautious", "Charming", "Cheerful", "Clever", "Clumsy", "Colourful",
     "Confused", "Cooperative", "Courageous", "Crazy", "Curious", "Cute",
     "Delightful", "Determined", "Different", "Distinct", "Dizzy", "Eager",
     "Easy", "Elegant", "Embarrassed", "Enchanting", "Encouraging", "Energetic",

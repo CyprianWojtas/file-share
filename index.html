@@ -10,7 +10,9 @@
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet"> 
-	<link rel="stylesheet" href="style.css">
+
+	<link rel="stylesheet" href="css/style.css">
+	<link rel="stylesheet" href="css/fontello/css/fontello.css">
 
 	<script src="https://unpkg.com/peerjs@1.4.5/dist/peerjs.min.js" defer></script>
 	<script src="https://cdn.jsdelivr.net/npm/sha256-uint8array/dist/sha256-uint8array.min.js" defer></script>
@@ -21,21 +23,15 @@
 <body>
 
 	<div class="sideMenu">
+		<div class="menuMyFiles">
+			<button class="myFilesButton">Your Files</button>
+			<div id="yourFiles"></div>
+		</div>
 		<h1>Connections</h1>
 		<div id="connections"></div>
-
-		<div>
-			<h1>Other's Files</h1>
-			<div id="remoteFileList"></div>
-		</div>
 	</div>
 
 	<div class="mainPage">
-		<h1>Your Files</h1>
-
-		<button id="fileChooser">Select File</button>
-		<button id="dirChooser">Select Directory</button>
-		<div id="fileList"></div>
 	</div>
 
 	<div id="downloadList"></div>

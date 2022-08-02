@@ -1,11 +1,19 @@
-// @ts-check
-
+import ConnectionMenuItem from "./GUI/ConnectionMenuItem.js";
 import registerDownloadStatus, { DownloadStatus } from "./GUI/DownloadStatus.js";
-import FileContainer from "./GUI/FileContainer.js";
+import FileContainerLocal from "./GUI/FileContainerLocal.js";
+import FileContainerRemote from "./GUI/FileContainerRemote.js";
 import Networking from "./Networking.js";
 import Shared from "./Shared.js";
 
 registerDownloadStatus();
+
+
+//===== Side menu =====//
+
+let menuSelectedEl: HTMLElement = document.querySelector(".menuMyFiles");
+
+const menuMyFilesEl = <HTMLElement>document.querySelector(".menuMyFiles");
+
 
 //===== Network management =====//
 
@@ -15,79 +23,49 @@ network.on("connectionNew", async con =>
 {
 	console.log("New connection!", network.connections, con);
 
-	let conNameEl = document.createElement("h2");
-	conNameEl.title = con.peer;
+	// document.querySelector("#connections")?.append(conNameEl, conSharesEl);
 
-	con.on("usernameUpdate", username =>
+	const connectionMenuItem = new ConnectionMenuItem(con);
+	document.querySelector("#connections")?.append(connectionMenuItem.element);
+
+	connectionMenuItem.element.addEventListener("click", () =>
 	{
-		conNameEl.innerHTML = "";
-		conNameEl.append(username);
+		menuSelectedEl.classList.remove("selected");
+		menuSelectedEl = connectionMenuItem.element;
+		menuSelectedEl.classList.add("selected");
+
+		const remoteFileContainer = new FileContainerRemote(con);
+
+		const mainPage = document.querySelector(".mainPage");
+		mainPage.innerHTML = "";
+		mainPage.append(remoteFileContainer.element);
 	});
-
-	let resp = await con.getShares();
-	let fileContainer = new FileContainer(resp);
-
-	fileContainer.on("clickDir", async directory => fileContainer.directory = await con.getDirectory(directory.path) );
-
-	fileContainer.on("clickFile", async file =>
-	{
-		const downloadStatus = <DownloadStatus>document.createElement("download-status");
-		downloadStatus.fileName = file.name;
-
-		document.querySelector("#downloadList")?.append(downloadStatus);
-
-		// @ts-ignore
-		con.downloadFile(file.path, (...data) => downloadStatus.handleStatusUpdate(...data));
-	});
-
-	fileContainer.on("clickNavigation", async path => fileContainer.directory = await con.getDirectory(path) );
-
-	con.on("sharesUpdate", async directory => fileContainer.directory = directory );
-
-	let conSharesEl = fileContainer.element;
-
-	con.on("disconnected", () =>
-	{
-		conNameEl.remove();
-		conSharesEl.remove();
-	});
-
-	document.querySelector("#remoteFileList")?.append(conNameEl, conSharesEl);
 });
 
+
+//===== Local Files =====//
+
+const localFileContainer = new FileContainerLocal(network);
+document.querySelector(".mainPage")?.append(localFileContainer.element);
+
+menuSelectedEl = menuMyFilesEl;
+menuSelectedEl.classList.add("selected");
+
+menuMyFilesEl.addEventListener("click", () =>
+{
+	menuSelectedEl.classList.remove("selected");
+	menuSelectedEl = menuMyFilesEl;
+	menuSelectedEl.classList.add("selected");
+
+	const mainPage = document.querySelector(".mainPage");
+	mainPage.innerHTML = "";
+	mainPage.append(localFileContainer.element);
+});
+
+
+//===== Global access =====//
 
 // @ts-ignore
 window.network = network;
 // @ts-ignore
 window.Shared = Shared;
-
-
-//===== Local Files =====//
-
-const localFileContainer = new FileContainer();
-
-// @ts-ignore
-localFileContainer.on("clickDir", async directory => localFileContainer.directory = await Shared.getDirectory(directory.path) );
-// @ts-ignore
-localFileContainer.on("clickNavigation", async path => localFileContainer.directory = await Shared.getDirectory(path) );
-
-document.getElementById("fileList")?.append(localFileContainer.element);
-
-
-document.getElementById("dirChooser")?.addEventListener("click", async () =>
-{
-	await Shared.requestDirectory();
-	const shares = await Shared.getDirectory();
-	// @ts-ignore
-	localFileContainer.directory = shares;
-	network.sendData("sharesUpdate", shares);
-});
-
-document.getElementById("fileChooser")?.addEventListener("click", async () =>
-{
-	await Shared.requestFile();
-	const shares = await Shared.getDirectory();
-	// @ts-ignore
-	localFileContainer.directory = shares;
-	network.sendData("sharesUpdate", shares);
-});

@@ -35,6 +35,26 @@ const downloadStatusStyle = `
 		background-position: 100% 100%;
 	}
 }
+button.close
+{
+	display: none;
+	float: right;
+	border: 1px solid #AAA;
+	font-family: inherit;
+	font-size: inherit;
+	padding: 0 0.25rem;
+	vertical-align: middle;
+	margin-left: 0.25rem;
+	background: #EEE;
+	border-radius: 0.25rem;
+	box-sizing: border-box;
+	line-height: 1rem;
+	height: 1rem;
+}
+.finished button.close
+{
+	display: inline-block;
+}
 `;
 export class DownloadStatus extends HTMLElement {
     constructor() {
@@ -58,7 +78,7 @@ export class DownloadStatus extends HTMLElement {
             childNodes: [
                 this._fileNameEl,
                 {
-                    name: "button", attributes: { class: "close" },
+                    name: "button", attributes: { class: "close" }, childNodes: ["×"],
                     listeners: { click: () => this.remove() }
                 },
                 this._progressBarEl,
@@ -102,9 +122,9 @@ export class DownloadStatus extends HTMLElement {
     }
     customProgressStatus(status, finished = false, width = 100) {
         if (finished)
-            this._progressBarEl.classList.add("finished");
+            this.rootElement.classList.add("finished");
         else
-            this._progressBarEl.classList.remove("finished");
+            this.rootElement.classList.remove("finished");
         this._progressBarEl.classList.add("customStatus");
         this._progressBarTextEl.innerHTML = "";
         this._progressBarTextEl.append(status);

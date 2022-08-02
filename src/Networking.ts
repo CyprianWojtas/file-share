@@ -1,6 +1,6 @@
 // @ts-check
 
-import Connection from "./Connection.js";
+import Connection, { dataType } from "./Connection.js";
 import EventObject from "./EventObject.js";
 import { generateId, generateName } from "./Utils.js";
 
@@ -142,7 +142,7 @@ class Networking extends EventObject<Events>
 		});
 	}
 
-	async sendData(dataType: string, data: any)
+	async sendData(dataType: dataType, data: any)
 	{
 		for (const connId in this.connections)
 			this.connections[connId].sendData(dataType, data);

@@ -2,7 +2,7 @@ import EventObject from "../EventObject.js";
 import { MIMETYPE_ICONS, MIMETYPE_NAMES } from "../Strings.js";
 import { createElement, createNodeTree, toFileSize } from "../Utils.js";
 export default class FileContainer extends EventObject {
-    constructor(dirContents = {}, path = [], id = 0) {
+    constructor(dirContents = {}, path = []) {
         super();
         this._itemsEl = createElement("div", { class: "items" });
         this._pathEl = createElement("div", { class: "path" });
@@ -29,10 +29,8 @@ export default class FileContainer extends EventObject {
             ]
         });
         this._contents = null;
-        this._id = 0;
         this._path = [];
         this.path = path;
-        this.id = id;
         this.contents = dirContents;
     }
     get contents() { return this._contents || {}; }
