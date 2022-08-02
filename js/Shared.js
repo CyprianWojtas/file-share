@@ -34,7 +34,7 @@ export default class Shared {
             // @ts-ignore
             const handles = await showOpenFilePicker({ multiple: true });
             for (let fileHandle of handles)
-                fileHandles[shareId++] = fileHandle;
+                this.addFile(fileHandle);
             return handles;
         }
         catch (e) {
@@ -42,17 +42,23 @@ export default class Shared {
             return null;
         }
     }
+    static addFile(fileHandle) {
+        fileHandles[shareId++] = fileHandle;
+    }
     static async requestDirectory() {
         try {
             // @ts-ignore
             let dirHandle = await showDirectoryPicker();
-            directoryHandles[shareId++] = dirHandle;
+            this.addDirectory(dirHandle);
             return dirHandle;
         }
         catch (e) {
             console.warn(e);
             return null;
         }
+    }
+    static addDirectory(fileHandle) {
+        directoryHandles[shareId++] = fileHandle;
     }
     static async getFileInfo(fileHandle, path = []) {
         const file = await fileHandle.getFile();

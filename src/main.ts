@@ -4,6 +4,8 @@ import FileContainerLocal from "./GUI/FileContainerLocal.js";
 import FileContainerRemote from "./GUI/FileContainerRemote.js";
 import Networking from "./Networking.js";
 import Shared from "./Shared.js";
+import { MIMETYPE_ICONS } from "./Strings.js";
+import { createNodeTree } from "./Utils.js";
 
 registerDownloadStatus();
 
@@ -62,6 +64,44 @@ menuMyFilesEl.addEventListener("click", () =>
 	mainPage.append(localFileContainer.element);
 });
 
+localFileContainer.on("sharesUpdate", shares =>
+{
+	const localFilesMenuListEl = document.querySelector("#yourFiles");
+	localFilesMenuListEl.innerHTML = "";
+
+	for (const directory of shares?.directories || [])
+		localFilesMenuListEl.append(createNodeTree(
+		{
+			name: "div", attributes: { class: "file" },
+			childNodes:
+			[
+				{ name: "img", attributes: { src: MIMETYPE_ICONS.directory, alt: "" } },
+				directory.name
+			]
+		}));
+
+	for (const file of shares?.files || [])
+		localFilesMenuListEl.append(createNodeTree(
+		{
+			name: "div", attributes: { class: "file" },
+			childNodes:
+			[
+				{ name: "img", attributes: { src: MIMETYPE_ICONS[file.type] || MIMETYPE_ICONS.unknown, alt: "" } },
+				file.name
+			]
+		}));
+});
+
+
+//===== Username field =====//
+const usernameInputEl = <HTMLInputElement>document.querySelector("#username");
+
+usernameInputEl.value = network.userName;
+
+usernameInputEl.addEventListener("input", () =>
+{
+	network.userName = usernameInputEl.value;
+});
 
 //===== Global access =====//
 

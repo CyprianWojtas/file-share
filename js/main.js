@@ -5,6 +5,8 @@ import FileContainerLocal from "./GUI/FileContainerLocal.js";
 import FileContainerRemote from "./GUI/FileContainerRemote.js";
 import Networking from "./Networking.js";
 import Shared from "./Shared.js";
+import { MIMETYPE_ICONS } from "./Strings.js";
+import { createNodeTree } from "./Utils.js";
 registerDownloadStatus();
 //===== Side menu =====//
 let menuSelectedEl = document.querySelector(".menuMyFiles");
@@ -39,6 +41,32 @@ menuMyFilesEl.addEventListener("click", () => {
     const mainPage = document.querySelector(".mainPage");
     mainPage.innerHTML = "";
     mainPage.append(localFileContainer.element);
+});
+localFileContainer.on("sharesUpdate", shares => {
+    const localFilesMenuListEl = document.querySelector("#yourFiles");
+    localFilesMenuListEl.innerHTML = "";
+    for (const directory of (shares === null || shares === void 0 ? void 0 : shares.directories) || [])
+        localFilesMenuListEl.append(createNodeTree({
+            name: "div", attributes: { class: "file" },
+            childNodes: [
+                { name: "img", attributes: { src: MIMETYPE_ICONS.directory, alt: "" } },
+                directory.name
+            ]
+        }));
+    for (const file of (shares === null || shares === void 0 ? void 0 : shares.files) || [])
+        localFilesMenuListEl.append(createNodeTree({
+            name: "div", attributes: { class: "file" },
+            childNodes: [
+                { name: "img", attributes: { src: MIMETYPE_ICONS[file.type] || MIMETYPE_ICONS.unknown, alt: "" } },
+                file.name
+            ]
+        }));
+});
+//===== Username field =====//
+const usernameInputEl = document.querySelector("#username");
+usernameInputEl.value = network.userName;
+usernameInputEl.addEventListener("input", () => {
+    network.userName = usernameInputEl.value;
 });
 //===== Global access =====//
 // @ts-ignore

@@ -45,9 +45,9 @@ function getPeer(): Promise<PeerJS.Peer>
 
 type Events =
 [
-	[ event: "connectionNew", callback: (conn: Connection) => void ],
+	[ event: "connectionNew",    callback: (conn: Connection) => void ],
 	[ event: "connectionClosed", callback: () => void ],
-	[ event: "usernameUpdate", callback: (userName: string) => void ]
+	[ event: "usernameUpdate",   callback: (userName: string) => void ]
 ];
 
 export default

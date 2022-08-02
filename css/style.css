@@ -23,15 +23,111 @@ body
 
 .sideMenu
 {
-	background: #EEE;
-	box-shadow: inset -2rem 0 1rem -2rem #0002;
+	background: #148;
+	box-shadow: -1rem 0 1rem 1rem #0004;
+	z-index: 1;
+	color: #FFF;
+}
+
+.sideMenu h1
+{
+	border-bottom: 1px solid #FFF;
+	font-size: 1rem;
+	margin-top: 1.5rem;
+}
+
+.sideMenu #username
+{
+	background: transparent;
+	border: none;
+	font-family: inherit;
+	font-size: 1rem;
+	color: inherit;
+	width: 100%;
+	padding: 0;
+}
+
+.sideMenu #username::placeholder
+{
+	color: #FFFA;
+}
+
+.sideMenu .usernameLabel
+{
+	position: relative;
+	font-size: 1rem;
+}
+
+.sideMenu .usernameLabel::after
+{
+	display: block;
+	content: "";
+	background: #FFF;
+	width: 40%;
+	height: 1px;
+	position: absolute;
 }
 
 .sideMenu .selected
 {
-	background: #0001;
+	background: #0002;
+}
+
+.sideMenu .menuMyFiles,
+.sideMenu .connectionMenuItem
+{
+	position: relative;
 	margin: 0 -1rem;
 	padding: 0 1rem;
+	transition: background-color 0.2s;
+}
+
+.sideMenu .menuMyFiles::before,
+.sideMenu .connectionMenuItem::before
+{
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 0;
+	background: #FFF;
+	height: 0;
+	width: 0.1rem;
+	transform: translateY(-50%);
+	transition: height 0.2s;
+}
+
+.sideMenu .menuMyFiles:hover:before,
+.sideMenu .connectionMenuItem:hover::before,
+.sideMenu .menuMyFiles:focus-within:before,
+.sideMenu .connectionMenuItem:focus-within::before,
+.sideMenu .selected::before
+{
+	height: 100%;
+}
+
+#yourFiles
+{
+	padding-top: 0.75rem;
+	padding-bottom: 0.5rem;
+}
+
+#yourFiles .file
+{
+	line-height: 1.25rem;
+}
+
+.sideMenu .menuMyFiles
+{
+	cursor: pointer;
+	padding-top: 0.5rem;
+}
+
+.sideMenu .menuMyFiles .file img
+{
+	height: 1rem;
+	vertical-align: middle;
+	margin-right: 0.5rem;
+	filter: brightness(256);
 }
 
 .sideMenu .myFilesButton
@@ -39,11 +135,13 @@ body
 	display: block;
 	background: none;
 	border: none;
-	cursor: pointer;
+	cursor: inherit;
 	font-family: inherit;
 	font-size: 1.5rem;
 	font-weight: bold;
 	padding: 0;
+	color: inherit;
+	margin-bottom: 0.1rem;
 }
 
 .dirContents
@@ -62,10 +160,11 @@ body
 
 /* ===== Connection menu items ===== */
 
-.connectionMenuItem
+.sideMenu .connectionMenuItem
 {
 	cursor: pointer;
 	display: block;
+	padding-top: 0.25rem;
 }
 
 .connectionMenuItem .connectionName
@@ -78,14 +177,16 @@ body
 	font-size: 1.15rem;
 	font-weight: bold;
 	padding: 0;
+	color: inherit;
 }
 
 .connectionMenuItem .statusProgrss
 {
 	height: 0.2rem;
-	background: #FFFA;
+	background: #FFF8;
 	overflow: hidden;
 	border-radius: 0.1rem;
+	margin-top: 0.25rem;
 }
 .connectionMenuItem .statusProgrssBar
 {
@@ -121,6 +222,17 @@ body
 {
 	display: table;
 	width: 100%;
+	caption-side: bottom;
+}
+
+.fileContainerItems .empty
+{
+	display: table-caption;
+	border-top: 1px solid #EEE;
+	text-align: center;
+	font-size: 1.5rem;
+	color: #DDD;
+	line-height: 4rem;
 }
 
 .fileContainerItems .containerHeader

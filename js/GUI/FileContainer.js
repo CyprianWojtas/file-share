@@ -35,12 +35,19 @@ export default class FileContainer extends EventObject {
     }
     get contents() { return this._contents || {}; }
     set contents(dirContents) {
+        var _a, _b;
         this._contents = dirContents;
         this._itemsEl.innerHTML = "";
         for (const directory of (dirContents === null || dirContents === void 0 ? void 0 : dirContents.directories) || [])
             this._itemsEl.append(this.generateDirElement(directory));
         for (const file of (dirContents === null || dirContents === void 0 ? void 0 : dirContents.files) || [])
             this._itemsEl.append(this.generateFileElement(file));
+        if (!((_a = dirContents === null || dirContents === void 0 ? void 0 : dirContents.files) === null || _a === void 0 ? void 0 : _a.length) && !((_b = dirContents === null || dirContents === void 0 ? void 0 : dirContents.directories) === null || _b === void 0 ? void 0 : _b.length)) {
+            this._itemsEl.append(createNodeTree({
+                name: "div", attributes: { class: "empty" },
+                childNodes: ["Directory Empty"]
+            }));
+        }
     }
     get path() { return this._path; }
     set path(newPath) {

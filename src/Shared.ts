@@ -72,7 +72,7 @@ class Shared
 			const handles: FSFileHandle[] = await showOpenFilePicker({ multiple: true });
 
 			for (let fileHandle of handles)
-				fileHandles[shareId++] = fileHandle;
+				this.addFile(fileHandle);
 
 			return handles;
 		}
@@ -83,14 +83,18 @@ class Shared
 		}
 	}
 
+	static addFile(fileHandle: FSFileHandle)
+	{
+		fileHandles[shareId++] = fileHandle;
+	}
+
 	static async requestDirectory()
 	{
 		try
 		{
 			// @ts-ignore
 			let dirHandle: FSDirectoryHandle = await showDirectoryPicker();
-
-			directoryHandles[shareId++] = dirHandle;
+			this.addDirectory(dirHandle);
 
 			return dirHandle;
 		}
@@ -99,6 +103,11 @@ class Shared
 			console.warn(e);
 			return null;
 		}
+	}
+
+	static addDirectory(fileHandle: FSDirectoryHandle)
+	{
+		directoryHandles[shareId++] = fileHandle;
 	}
 
 	static async getFileInfo(fileHandle: FSFileHandle, path = []): Promise<FileInfo>

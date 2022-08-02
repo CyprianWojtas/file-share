@@ -75,6 +75,15 @@ class FileContainer extends EventObject<Events>
 
 		for (const file of dirContents?.files || [])
 			this._itemsEl.append(this.generateFileElement(file));
+		
+		if (!dirContents?.files?.length && !dirContents?.directories?.length)
+		{
+			this._itemsEl.append(createNodeTree(
+			{
+				name: "div", attributes: { class: "empty" },
+				childNodes: [ "Directory Empty" ]
+			}));
+		}
 	}
 
 

@@ -172,7 +172,7 @@ class Connection extends EventObject<Events>
 		switch(dataType)
 		{
 			case "username":
-				this.userName = String(data);
+				this.userName = String(data) || "Unknown";
 				this._fireEvent("usernameUpdate", this.userName);
 				break;
 			case "sharesUpdate":

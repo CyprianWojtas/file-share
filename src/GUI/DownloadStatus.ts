@@ -6,6 +6,12 @@ const downloadStatusStyle =
 {
 	margin: 0.5rem 0;
 }
+.fileName
+{
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
 .progressBar
 {
 	background: #EEE;
