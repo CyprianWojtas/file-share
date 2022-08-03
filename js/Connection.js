@@ -2,9 +2,6 @@
 import EventObject from "./EventObject.js";
 import { APP_NAME } from "./Networking.js";
 import Shared from "./Shared.js";
-import { toFileSize } from "./Utils.js";
-/** size of chunk of uploaded data */
-const CHUNK_SIZE = 1048576; // 1 MB
 /** Class for communication between two users */
 class Connection extends EventObject {
     constructor(dataConnection, network) {
@@ -17,9 +14,6 @@ class Connection extends EventObject {
         // File sending
         this._filePath = [];
         this._file = null;
-        // File downloading
-        this._downloading = false;
-        this._downloadQueue = [];
         this.network = network;
         this.status = { text: "", title: "" };
         this.bindDataConnection(dataConnection);
@@ -165,102 +159,6 @@ class Connection extends EventObject {
             this._filePath = path;
         }
         return this._file.slice(start, end).arrayBuffer();
-    }
-    //============================//
-    //===== File downloading =====//
-    //============================//
-    async downloadFile(path, callback) {
-        const fileInfo = await this.getFile(path);
-        let fileHandle = null;
-        callback === null || callback === void 0 ? void 0 : callback("fileInfo", fileInfo);
-        try {
-            // @ts-ignore
-            fileHandle = await showSaveFilePicker({ suggestedName: fileInfo.name });
-        }
-        catch (err) {
-            if (err instanceof DOMException)
-                return callback === null || callback === void 0 ? void 0 : callback("savingNotPermitted");
-            else
-                throw (err);
-        }
-        this._downloadQueue.push([path, callback, fileInfo, fileHandle]);
-        if (this._downloadQueue.length > 1 || this._downloading) {
-            callback === null || callback === void 0 ? void 0 : callback("enqueued");
-            return;
-        }
-        while (this._downloadQueue.length)
-            await this.downloadEnqueuedFile();
-    }
-    /* Download one of previusly enqueued files */
-    async downloadEnqueuedFile() {
-        if (this._downloading || !this._downloadQueue.length)
-            return;
-        const [path, callback, fileInfo, fileHandle] = this._downloadQueue.shift();
-        callback === null || callback === void 0 ? void 0 : callback("fileInfo", fileInfo);
-        this._downloading = true;
-        let progress = 0;
-        const fileWritable = await fileHandle.createWritable();
-        let writtingStatus = null;
-        let time = Date.now();
-        let speed = 0;
-        while (progress < fileInfo.size) {
-            let newTime = Date.now();
-            if (newTime != time)
-                speed = CHUNK_SIZE / (newTime - time) * 1000;
-            time = newTime;
-            this.sendData("statusUpdate", {
-                text: `${fileInfo.name} — ${(progress / fileInfo.size * 100).toFixed(2)}% (${toFileSize(speed)}/s)`,
-                title: `${toFileSize(progress)}/${toFileSize(fileInfo.size)}`,
-                progress: progress / fileInfo.size
-            });
-            callback === null || callback === void 0 ? void 0 : callback("progress", { current: progress, total: fileInfo.size, speed });
-            let data = await this.readFile(path, progress, progress + CHUNK_SIZE);
-            progress += CHUNK_SIZE;
-            await writtingStatus;
-            writtingStatus = fileWritable.write(data);
-        }
-        this.sendData("statusUpdate", { text: `${fileInfo.name} — Saving...`, title: "", progress: 1 });
-        callback === null || callback === void 0 ? void 0 : callback("savingToFile");
-        await fileWritable.close();
-        this.sendData("statusUpdate", { text: "", title: "" });
-        callback === null || callback === void 0 ? void 0 : callback("finished");
-        this._downloading = false;
-    }
-    async downloadDirectory(path, callback) {
-        const dirInfo = await this.getDirectory(path);
-        let dirHandle = null;
-        callback === null || callback === void 0 ? void 0 : callback("directoryInfo", dirInfo);
-        try {
-            // @ts-ignore
-            dirHandle = await showDirectoryPicker({ mode: "readwrite" });
-        }
-        catch (err) {
-            if (err instanceof DOMException)
-                return callback === null || callback === void 0 ? void 0 : callback("savingNotPermitted");
-            else
-                throw (err);
-        }
-        console.log(dirHandle);
-        // Creating directory tree
-        const parseTree = async (parentDirHandle, dirInfo) => {
-            const dirHandle = await parentDirHandle.getDirectoryHandle(dirInfo.name, { create: true });
-            for (const directory of dirInfo.directories || []) {
-                const subdirInfo = await this.getDirectory(directory.path);
-                parseTree(dirHandle, subdirInfo);
-            }
-            for (const fileInfo of dirInfo.files || []) {
-                const fileHandle = await dirHandle.getFileHandle(fileInfo.name, { create: true });
-                this._downloadQueue.push([fileInfo.path, callback, fileInfo, fileHandle]);
-            }
-        };
-        await parseTree(dirHandle, dirInfo);
-        // this._downloadQueue.push([ path, callback, dirInfo, dirHandle ]);
-        if (this._downloading) {
-            callback === null || callback === void 0 ? void 0 : callback("enqueued");
-            return;
-        }
-        while (this._downloadQueue.length)
-            await this.downloadEnqueuedFile();
     }
 }
 export default Connection;

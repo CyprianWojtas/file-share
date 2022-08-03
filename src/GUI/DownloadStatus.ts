@@ -1,10 +1,15 @@
+import { DirectoryDownload, FileDownload } from "../Downloader.js";
 import { createElement, createNodeTree, toFileSize } from "../Utils.js";
 
 const downloadStatusStyle =
 `
 :host
 {
-	margin: 0.5rem 0;
+	display: block;
+	padding: 0.5rem;
+	background: #FFF;
+	border-radius: 0.5rem;
+	margin-bottom: 0.5rem;
 }
 .fileName
 {
@@ -18,8 +23,8 @@ const downloadStatusStyle =
 	text-align: center;
 	position: relative;
 	border-radius: 0.25rem;
-	z-index: -1;
 	overflow: hidden;
+	height: 1rem;
 }
 .progressBarBackground
 {
@@ -28,8 +33,16 @@ const downloadStatusStyle =
 	top: 0;
 	left: 0;
 	bottom: 0;
-	z-index: -1;
 }
+.progressBar span
+{
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+}
+
 .progressBarBackground.animated
 {
 	background: repeating-linear-gradient(45deg, #F77, #F77 0.5rem, #F55 0.5rem, #F55 1rem);
@@ -69,6 +82,8 @@ export class DownloadStatus extends HTMLElement
 {
 	rootElement: HTMLElement;
 
+	private _downloader: FileDownload | DirectoryDownload;
+
 	private _fileNameEl: HTMLElement;
 	private _progressBarBackgroundEl: HTMLElement;
 	private _progressBarTextEl: HTMLElement;
@@ -98,8 +113,8 @@ export class DownloadStatus extends HTMLElement
 			name: "div", attributes: { class: "progressBar" },
 			childNodes:
 			[
-				this._progressBarTextEl,
-				this._progressBarBackgroundEl
+				this._progressBarBackgroundEl,
+				this._progressBarTextEl
 			]
 		});
 
@@ -162,6 +177,14 @@ export class DownloadStatus extends HTMLElement
 		this.updateProgressBar();
 	}
 
+	get downloader() { return this._downloader; }
+
+	set downloader(newDownloader: FileDownload | DirectoryDownload)
+	{
+		this._downloader = newDownloader;
+		this.bindStatusUpdates();
+	}
+
 	updateProgressBar()
 	{
 		this._progressBarBackgroundEl.classList.remove("animated");
@@ -190,29 +213,37 @@ export class DownloadStatus extends HTMLElement
 	}
 
 	//===== Handling download status responses =====//
-	handleStatusUpdate(eventName, data)
+	bindStatusUpdates()
 	{
-		switch (eventName)
-			{
-				case "fileInfo":
-					this.total = data.size;
-					this.customProgressStatus("Waiting for download...", false, 0);
-					break;
-				case "progress":
-					this.progress = data.current;
-					this.speed    = data.speed;
-					break;
-				case "savingToFile":
-					this.customProgressStatus("Saving to file...", false);
-					break;
-				case "finished":
-					this.customProgressStatus("Finished!", true);
-					break;
-				// Error handling
-				case "savingNotPermitted":
-					this.rootElement.remove();
-					break;
-			}
+		this._downloader.on("fileInfo", fileInfo =>
+		{
+			this.total = fileInfo.size;
+			this.fileName = fileInfo.name;
+
+			this.customProgressStatus("Waiting for download...", false, 0);
+		});
+
+		this._downloader.on("progress", progress =>
+		{
+			this.progress = progress.current;
+			this.total    = progress.total;
+			this.speed    = progress.speed;
+		});
+
+		this._downloader.on("savingToFile", () =>
+		{
+			this.customProgressStatus("Saving to file...", false);
+		});
+
+		this._downloader.on("finished", () =>
+		{
+			this.customProgressStatus("Finished!", true);
+		});
+
+		this._downloader.on("savingNotPermitted", () =>
+		{
+			this.rootElement.remove();
+		});
 	}
 }
 

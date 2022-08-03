@@ -1,7 +1,8 @@
 import Connection from "../Connection.js";
-import Shared from "../Shared.js";
+import Downloader from "../Downloader.js";
 import { createNodeTree } from "../Utils.js";
 import { DownloadStatus } from "./DownloadStatus.js";
+import DownloadStatusDirectory from "./DownloadStatusDirectory.js";
 import FileContainer from "./FileContainer.js";
 
 
@@ -12,10 +13,12 @@ class FileContainerRemote
 	element: HTMLElement;
 
 	private _conntection: Connection;
+	private _downloader: Downloader;
 
 	constructor(conntection: Connection)
 	{
 		this._conntection = conntection;
+		this._downloader = new Downloader(conntection);
 
 		this.fileContainer = new FileContainer();
 
@@ -53,26 +56,22 @@ class FileContainerRemote
 
 	async clickFile(file)
 	{
+		const fileDownload = this._downloader.downloadFile(file.path);
+
 		const downloadStatus = <DownloadStatus>document.createElement("download-status");
-		downloadStatus.fileName = file.name;
+		downloadStatus.downloader = fileDownload;
 
 		document.querySelector("#downloadList")?.append(downloadStatus);
-
-		// @ts-ignore
-		this._conntection.downloadFile(file.path, (...data) => downloadStatus.handleStatusUpdate(...data));
 	}
 
 	async clickDirectory(directory, e: MouseEvent)
 	{
 		if (e.ctrlKey)
 		{
-			const downloadStatus = <DownloadStatus>document.createElement("download-status");
-			downloadStatus.fileName = directory.name;
+			const fileDownload = this._downloader.downloadDirectory(directory.path);
 	
-			document.querySelector("#downloadList")?.append(downloadStatus);
-	
-			// @ts-ignore
-			this._conntection.downloadDirectory(directory.path, (...data) => downloadStatus.handleStatusUpdate(...data));
+			const downloadStatus = new DownloadStatusDirectory(fileDownload);
+			document.querySelector("#downloadList")?.append(downloadStatus.element);
 		}
 		else
 		{

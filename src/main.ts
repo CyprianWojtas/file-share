@@ -1,5 +1,6 @@
 import ConnectionMenuItem from "./GUI/ConnectionMenuItem.js";
 import registerDownloadStatus, { DownloadStatus } from "./GUI/DownloadStatus.js";
+import DownloadStatusDirectory from "./GUI/DownloadStatusDirectory.js";
 import FileContainerLocal from "./GUI/FileContainerLocal.js";
 import FileContainerRemote from "./GUI/FileContainerRemote.js";
 import Networking from "./Networking.js";

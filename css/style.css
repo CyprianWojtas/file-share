@@ -330,9 +330,79 @@ body
 	position: fixed;
 	bottom: 0;
 	right: 2rem;
-	background: #DDD;
+	background: #148;
 	width: 20rem;
 	padding: 0.5rem;
 	border-radius: 0.5rem 0.5rem 0 0;
 	box-shadow: 0 0 2rem #0002;
+}
+
+.downloadStatus
+{
+	padding: 0.5rem;
+	margin-bottom: 0.5rem;
+	background: #FFF;
+	border-radius: 0.5rem;
+	position: relative;
+}
+
+.downloadStatus .dirName
+{
+	font-weight: bold;
+}
+
+.downloadStatus .file
+{
+	display: flex;
+	justify-content: space-between;
+	gap: 0.5rem;
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+.downloadStatus .fileName
+{
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.downloadStatus button.close
+{
+	float: right;
+}
+
+.downloadStatus .progressBar
+{
+	position: relative;
+	height: 1rem;
+	background: #DDD;
+	border-radius: 1rem;
+	overflow: hidden;
+	margin: 0.5rem 0;
+	text-align: center;
+}
+
+.downloadStatus .progressBar span
+{
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+}
+
+.downloadStatus .progressBar .progressBarBg
+{
+	width: 0;
+	height: 100%;
+	background: #F00;
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+
+.downloadStatus .footer
+{
+	display: flex;
+	justify-content: space-between;
 }

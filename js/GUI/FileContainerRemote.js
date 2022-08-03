@@ -1,8 +1,11 @@
+import Downloader from "../Downloader.js";
 import { createNodeTree } from "../Utils.js";
+import DownloadStatusDirectory from "./DownloadStatusDirectory.js";
 import FileContainer from "./FileContainer.js";
 export default class FileContainerRemote {
     constructor(conntection) {
         this._conntection = conntection;
+        this._downloader = new Downloader(conntection);
         this.fileContainer = new FileContainer();
         this.element = createNodeTree({
             name: "div", attributes: { class: "localFileContainer" },
@@ -28,20 +31,17 @@ export default class FileContainerRemote {
     }
     async clickFile(file) {
         var _a;
+        const fileDownload = this._downloader.downloadFile(file.path);
         const downloadStatus = document.createElement("download-status");
-        downloadStatus.fileName = file.name;
+        downloadStatus.downloader = fileDownload;
         (_a = document.querySelector("#downloadList")) === null || _a === void 0 ? void 0 : _a.append(downloadStatus);
-        // @ts-ignore
-        this._conntection.downloadFile(file.path, (...data) => downloadStatus.handleStatusUpdate(...data));
     }
     async clickDirectory(directory, e) {
         var _a;
         if (e.ctrlKey) {
-            const downloadStatus = document.createElement("download-status");
-            downloadStatus.fileName = directory.name;
-            (_a = document.querySelector("#downloadList")) === null || _a === void 0 ? void 0 : _a.append(downloadStatus);
-            // @ts-ignore
-            this._conntection.downloadDirectory(directory.path, (...data) => downloadStatus.handleStatusUpdate(...data));
+            const fileDownload = this._downloader.downloadDirectory(directory.path);
+            const downloadStatus = new DownloadStatusDirectory(fileDownload);
+            (_a = document.querySelector("#downloadList")) === null || _a === void 0 ? void 0 : _a.append(downloadStatus.element);
         }
         else {
             this.fileContainer.directory = await this._conntection.getDirectory(directory.path);
