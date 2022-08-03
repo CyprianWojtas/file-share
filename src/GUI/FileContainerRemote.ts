@@ -31,7 +31,7 @@ class FileContainerRemote
 			]
 		});
 	
-		this.fileContainer.on("clickDir", async directory => this.fileContainer.directory = await this._conntection.getDirectory(directory.path) );
+		this.fileContainer.on("clickDir", async (directory, e) => this.clickDirectory(directory, e) );
 		this.fileContainer.on("clickNavigation", async path => this.fileContainer.directory = await this._conntection.getDirectory(path) );
 
 		this.fileContainer.on("clickFile", file => this.clickFile(file));
@@ -60,5 +60,23 @@ class FileContainerRemote
 
 		// @ts-ignore
 		this._conntection.downloadFile(file.path, (...data) => downloadStatus.handleStatusUpdate(...data));
+	}
+
+	async clickDirectory(directory, e: MouseEvent)
+	{
+		if (e.ctrlKey)
+		{
+			const downloadStatus = <DownloadStatus>document.createElement("download-status");
+			downloadStatus.fileName = directory.name;
+	
+			document.querySelector("#downloadList")?.append(downloadStatus);
+	
+			// @ts-ignore
+			this._conntection.downloadDirectory(directory.path, (...data) => downloadStatus.handleStatusUpdate(...data));
+		}
+		else
+		{
+			this.fileContainer.directory = await this._conntection.getDirectory(directory.path);
+		}
 	}
 }

@@ -176,8 +176,19 @@ body
 	font-family: inherit;
 	font-size: 1.15rem;
 	font-weight: bold;
+	text-align: left;
 	padding: 0;
 	color: inherit;
+	width: 100%;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.connectionMenuItem .status
+{
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .connectionMenuItem .statusProgrss

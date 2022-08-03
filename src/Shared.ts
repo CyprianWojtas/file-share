@@ -1,9 +1,9 @@
 // tsc does not undersand what these are
 // bruh.
 // @ts-ignore
-type FSDirectoryHandle = FileSystemDirectoryHandle;
+export type FSDirectoryHandle = FileSystemDirectoryHandle;
 // @ts-ignore
-type FSFileHandle = FileSystemFileHandle;
+export type FSFileHandle = FileSystemFileHandle;
 
 export interface FileInfo
 {

@@ -6,9 +6,9 @@ import { createElement, createNodeTree, toFileSize } from "../Utils.js";
 
 type Events =
 [
-	[ "clickNavigation", (path: string[]) => any ],
-	[ "clickFile", (file: FileInfo) => any ],
-	[ "clickDir",  (file: DirectoryInfo) => any ]
+	[ "clickNavigation", (path: string[], e: MouseEvent) => any ],
+	[ "clickFile", (file: FileInfo, e: MouseEvent) => any ],
+	[ "clickDir",  (file: DirectoryInfo, e: MouseEvent) => any ]
 ];
 
 export default
@@ -97,7 +97,7 @@ class FileContainer extends EventObject<Events>
 
 		const pathHomeEl = createNodeTree(
 		{
-			name: "button", listeners: { click: () => this._fireEvent("clickNavigation", []) },
+			name: "button", listeners: { click: e => this._fireEvent("clickNavigation", [], e) },
 			childNodes: [ "Home" ]
 		});
 		this._pathEl.append(pathHomeEl, "/");
@@ -106,7 +106,7 @@ class FileContainer extends EventObject<Events>
 		{
 			const pathPartEl = createNodeTree(
 			{
-				name: "button", listeners: { click: () => this._fireEvent("clickNavigation", newPath.slice(0, i + 1)) },
+				name: "button", listeners: { click: e => this._fireEvent("clickNavigation", newPath.slice(0, i + 1), e) },
 				childNodes: [ newPath[i] ]
 			});
 			this._pathEl.append(pathPartEl, "/");
@@ -136,7 +136,7 @@ class FileContainer extends EventObject<Events>
 					[
 						{
 							name: "button",
-							listeners: { click: () => this._fireEvent("clickFile", file) },
+							listeners: { click: e => this._fireEvent("clickFile", file, e) },
 							childNodes: [ file.name ]
 						}
 					]
@@ -176,7 +176,7 @@ class FileContainer extends EventObject<Events>
 					[
 						{
 							name: "button",
-							listeners: { click: () => this._fireEvent("clickDir", directory) },
+							listeners: { click: e => this._fireEvent("clickDir", directory, e) },
 							childNodes: [ directory.name ]
 						}
 					]

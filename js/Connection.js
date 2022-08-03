@@ -196,6 +196,7 @@ class Connection extends EventObject {
         if (this._downloading || !this._downloadQueue.length)
             return;
         const [path, callback, fileInfo, fileHandle] = this._downloadQueue.shift();
+        callback === null || callback === void 0 ? void 0 : callback("fileInfo", fileInfo);
         this._downloading = true;
         let progress = 0;
         const fileWritable = await fileHandle.createWritable();
@@ -224,6 +225,42 @@ class Connection extends EventObject {
         this.sendData("statusUpdate", { text: "", title: "" });
         callback === null || callback === void 0 ? void 0 : callback("finished");
         this._downloading = false;
+    }
+    async downloadDirectory(path, callback) {
+        const dirInfo = await this.getDirectory(path);
+        let dirHandle = null;
+        callback === null || callback === void 0 ? void 0 : callback("directoryInfo", dirInfo);
+        try {
+            // @ts-ignore
+            dirHandle = await showDirectoryPicker({ mode: "readwrite" });
+        }
+        catch (err) {
+            if (err instanceof DOMException)
+                return callback === null || callback === void 0 ? void 0 : callback("savingNotPermitted");
+            else
+                throw (err);
+        }
+        console.log(dirHandle);
+        // Creating directory tree
+        const parseTree = async (parentDirHandle, dirInfo) => {
+            const dirHandle = await parentDirHandle.getDirectoryHandle(dirInfo.name, { create: true });
+            for (const directory of dirInfo.directories || []) {
+                const subdirInfo = await this.getDirectory(directory.path);
+                parseTree(dirHandle, subdirInfo);
+            }
+            for (const fileInfo of dirInfo.files || []) {
+                const fileHandle = await dirHandle.getFileHandle(fileInfo.name, { create: true });
+                this._downloadQueue.push([fileInfo.path, callback, fileInfo, fileHandle]);
+            }
+        };
+        await parseTree(dirHandle, dirInfo);
+        // this._downloadQueue.push([ path, callback, dirInfo, dirHandle ]);
+        if (this._downloading) {
+            callback === null || callback === void 0 ? void 0 : callback("enqueued");
+            return;
+        }
+        while (this._downloadQueue.length)
+            await this.downloadEnqueuedFile();
     }
 }
 export default Connection;

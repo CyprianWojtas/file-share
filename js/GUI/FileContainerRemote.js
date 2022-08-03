@@ -13,7 +13,7 @@ export default class FileContainerRemote {
                 this.fileContainer.element
             ]
         });
-        this.fileContainer.on("clickDir", async (directory) => this.fileContainer.directory = await this._conntection.getDirectory(directory.path));
+        this.fileContainer.on("clickDir", async (directory, e) => this.clickDirectory(directory, e));
         this.fileContainer.on("clickNavigation", async (path) => this.fileContainer.directory = await this._conntection.getDirectory(path));
         this.fileContainer.on("clickFile", file => this.clickFile(file));
         this._conntection.on("sharesUpdate", async (directory) => this.fileContainer.directory = directory);
@@ -33,5 +33,18 @@ export default class FileContainerRemote {
         (_a = document.querySelector("#downloadList")) === null || _a === void 0 ? void 0 : _a.append(downloadStatus);
         // @ts-ignore
         this._conntection.downloadFile(file.path, (...data) => downloadStatus.handleStatusUpdate(...data));
+    }
+    async clickDirectory(directory, e) {
+        var _a;
+        if (e.ctrlKey) {
+            const downloadStatus = document.createElement("download-status");
+            downloadStatus.fileName = directory.name;
+            (_a = document.querySelector("#downloadList")) === null || _a === void 0 ? void 0 : _a.append(downloadStatus);
+            // @ts-ignore
+            this._conntection.downloadDirectory(directory.path, (...data) => downloadStatus.handleStatusUpdate(...data));
+        }
+        else {
+            this.fileContainer.directory = await this._conntection.getDirectory(directory.path);
+        }
     }
 }

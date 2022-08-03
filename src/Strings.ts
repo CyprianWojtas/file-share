@@ -38,7 +38,7 @@ export const MIMETYPE_NAMES =
 	"application/ogg": "OGG",
 	"audio/opus": "Opus audio",
 	"font/otf": "OpenType font",
-	"image/png": "PMG image",
+	"image/png": "PNG image",
 	"application/pdf": "Adobe Portable Document Format (PDF)",
 	"application/x-httpd-php": "Hypertext Preprocessor (Personal Home Page)",
 	"application/vnd.ms-powerpoint": "Microsoft PowerPoint",

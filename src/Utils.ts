@@ -5,7 +5,7 @@
  * @param attributes - `name: value` dictionary
  * @param eventListeners - `name: value` dictionary
  */
-export function createElement(nodeName: string, attributes: { [name: string]: string; } = {}, eventListeners: { [name: string]: (() => any) | (() => any)[]; } = {})
+export function createElement(nodeName: string, attributes: { [name: string]: string; } = {}, eventListeners: { [name: string]: ((...any) => any) | ((...any) => any)[]; } = {})
 {
 	let element: HTMLElement = document.createElement(nodeName);
 
@@ -31,7 +31,7 @@ interface ElementParams
 {
 	name: string;
 	attributes?: { [name: string]: string };
-	listeners?: { [name: string]: (() => any) | (() => any)[] };
+	listeners?: { [name: string]: ((...any) => any) | ((...any) => any)[] };
 	childNodes?: (ElementParams | HTMLElement | Text | ChildNode | string)[];
 }
 

@@ -2,7 +2,7 @@
 
 import EventObject from "./EventObject.js";
 import Networking, { APP_NAME } from "./Networking.js";
-import Shared, { DirectoryInfo } from "./Shared.js";
+import Shared, { DirectoryInfo, FSDirectoryHandle } from "./Shared.js";
 
 import * as PeerJS from "peerjs";
 import { toFileSize } from "./Utils.js";
@@ -312,6 +312,8 @@ class Connection extends EventObject<Events>
 			return;
 		
 		const [ path, callback, fileInfo, fileHandle ] = this._downloadQueue.shift();
+
+		callback?.("fileInfo", fileInfo);
 		
 		this._downloading = true;
 
@@ -356,6 +358,60 @@ class Connection extends EventObject<Events>
 		callback?.("finished");
 
 		this._downloading = false;
+	}
+
+	async downloadDirectory(path: string[], callback: (...rest: any[]) => any)
+	{
+		const dirInfo = await this.getDirectory(path);
+		let dirHandle = null;
+
+		callback?.("directoryInfo", dirInfo);
+
+		try
+		{
+			// @ts-ignore
+			dirHandle = await showDirectoryPicker({ mode: "readwrite" });
+		}
+		catch(err)
+		{
+			if (err instanceof DOMException)
+				return callback?.("savingNotPermitted");
+			else
+				throw(err);
+		}
+
+		console.log(dirHandle);
+
+		// Creating directory tree
+		const parseTree = async (parentDirHandle: FSDirectoryHandle, dirInfo: DirectoryInfo) =>
+		{
+			const dirHandle = await parentDirHandle.getDirectoryHandle(dirInfo.name, { create: true });
+
+			for (const directory of dirInfo.directories || [])
+			{
+				const subdirInfo: DirectoryInfo = await this.getDirectory(directory.path);
+				parseTree(dirHandle, subdirInfo);
+			}
+
+			for (const fileInfo of dirInfo.files || [])
+			{
+				const fileHandle = await dirHandle.getFileHandle(fileInfo.name, { create: true });
+				this._downloadQueue.push([ fileInfo.path, callback, fileInfo, fileHandle ]);
+			}
+		}
+
+		await parseTree(dirHandle, dirInfo);
+
+		// this._downloadQueue.push([ path, callback, dirInfo, dirHandle ]);
+
+		if (this._downloading)
+		{
+			callback?.("enqueued");
+			return;
+		}
+		
+		while (this._downloadQueue.length)
+			await this.downloadEnqueuedFile();
 	}
 }
 
