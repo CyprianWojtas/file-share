@@ -1,7 +1,7 @@
 import Connection from "../Connection.js";
 import Downloader from "../Downloader.js";
 import { createNodeTree } from "../Utils.js";
-import { DownloadStatus } from "./DownloadStatus.js";
+import DownloadStatus from "./DownloadStatus.js";
 import DownloadStatusDirectory from "./DownloadStatusDirectory.js";
 import FileContainer from "./FileContainer.js";
 
@@ -57,11 +57,8 @@ class FileContainerRemote
 	async clickFile(file)
 	{
 		const fileDownload = this._downloader.downloadFile(file.path);
-
-		const downloadStatus = <DownloadStatus>document.createElement("download-status");
-		downloadStatus.downloader = fileDownload;
-
-		document.querySelector("#downloadList")?.append(downloadStatus);
+		const downloadStatus = new DownloadStatus(fileDownload);
+		document.querySelector("#downloadList")?.append(downloadStatus.element);
 	}
 
 	async clickDirectory(directory, e: MouseEvent)

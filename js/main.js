@@ -1,13 +1,11 @@
 var _a;
 import ConnectionMenuItem from "./GUI/ConnectionMenuItem.js";
-import registerDownloadStatus from "./GUI/DownloadStatus.js";
 import FileContainerLocal from "./GUI/FileContainerLocal.js";
 import FileContainerRemote from "./GUI/FileContainerRemote.js";
 import Networking from "./Networking.js";
 import Shared from "./Shared.js";
 import { MIMETYPE_ICONS } from "./Strings.js";
 import { createNodeTree } from "./Utils.js";
-registerDownloadStatus();
 //===== Side menu =====//
 let menuSelectedEl = document.querySelector(".menuMyFiles");
 const menuMyFilesEl = document.querySelector(".menuMyFiles");

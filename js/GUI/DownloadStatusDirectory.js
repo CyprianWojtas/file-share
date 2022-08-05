@@ -6,33 +6,33 @@ export default class DownloadStatusDirectory {
             name: "div", attributes: { class: "downloadStatus" },
             childNodes: [
                 { name: "button", attributes: { class: "close" }, listeners: { click: () => this.element.remove() } },
-                { name: "div", attributes: { class: "dirName" } },
+                { name: "div", attributes: { class: "dirName" }, childNodes: [" "] },
                 {
                     name: "div", attributes: { class: "file" },
                     childNodes: [
-                        { name: "div", attributes: { class: "fileName" } },
-                        { name: "div", attributes: { class: "fileSize" } }
+                        { name: "div", attributes: { class: "fileName" }, childNodes: [" "] },
+                        { name: "div", attributes: { class: "fileSize" }, childNodes: [" "] }
                     ]
                 },
                 {
                     name: "div", attributes: { class: "progressBar progressBarFile" },
                     childNodes: [
                         { name: "div", attributes: { class: "progressBarBg" } },
-                        { name: "span" }
+                        { name: "span", childNodes: ["Waiting for download..."] }
                     ]
                 },
                 {
                     name: "div", attributes: { class: "progressBar progressBarTotal" },
                     childNodes: [
                         { name: "div", attributes: { class: "progressBarBg" } },
-                        { name: "span" }
+                        { name: "span", childNodes: ["Waiting for download..."] }
                     ]
                 },
                 {
                     name: "div", attributes: { class: "footer" },
                     childNodes: [
-                        { name: "div", attributes: { class: "downloadSpeed" } },
-                        { name: "div", attributes: { class: "totalSize" } }
+                        { name: "div", attributes: { class: "downloadSpeed" }, childNodes: ["0 B/s"] },
+                        { name: "div", attributes: { class: "totalSize" }, childNodes: [" "] }
                     ]
                 }
             ]
@@ -170,5 +170,6 @@ export default class DownloadStatusDirectory {
             this.progress = "finished";
             this.fileProgress = "finished";
         });
+        this._directoryDownload.on("savingNotPermitted", () => this.element.remove());
     }
 }

@@ -1,9 +1,9 @@
 // tsc does not undersand what these are
 // bruh.
 // @ts-ignore
-export type FSDirectoryHandle = FileSystemDirectoryHandle;
+export type FSDirectoryHandle = FileSystemDirectoryHandle | FileSystemDirectoryEntry;
 // @ts-ignore
-export type FSFileHandle = FileSystemFileHandle;
+export type FSFileHandle = FileSystemFileHandle | FileSystemFileEntry;
 
 export interface FileInfo
 {
@@ -31,7 +31,7 @@ let shareId = 1;
 export default
 class Shared
 {
-	static async files()
+	static async files(): Promise<FileInfo[]>
 	{
 		const fileList: FileInfo[] = [];
 
@@ -48,9 +48,9 @@ class Shared
 		return fileList;
 	}
 
-	static async directories()
+	static async directories(): Promise<DirectoryInfo[]>
 	{
-		const dirList = [];
+		const dirList: DirectoryInfo[] = [];
 
 		for (const id in directoryHandles)
 		{
@@ -64,7 +64,8 @@ class Shared
 		return dirList;
 	}
 
-	static async requestFile()
+	/** File System API required */
+	static async requestFile(): Promise<boolean>
 	{
 		try
 		{
@@ -74,21 +75,22 @@ class Shared
 			for (let fileHandle of handles)
 				this.addFile(fileHandle);
 
-			return handles;
+			return true;
 		}
 		catch(e)
 		{
 			console.warn(e);
-			return null;
+			return false;
 		}
 	}
 
-	static addFile(fileHandle: FSFileHandle)
+	static addFile(fileHandle: FSFileHandle): void
 	{
 		fileHandles[shareId++] = fileHandle;
 	}
 
-	static async requestDirectory()
+	/** File System API required */
+	static async requestDirectory(): Promise<boolean>
 	{
 		try
 		{
@@ -96,41 +98,63 @@ class Shared
 			let dirHandle: FSDirectoryHandle = await showDirectoryPicker();
 			this.addDirectory(dirHandle);
 
-			return dirHandle;
+			return true;
 		}
 		catch(e)
 		{
 			console.warn(e);
-			return null;
+			return false;
 		}
 	}
 
-	static addDirectory(fileHandle: FSDirectoryHandle)
+	static addDirectory(fileHandle: FSDirectoryHandle): void
 	{
 		directoryHandles[shareId++] = fileHandle;
 	}
 
-	static async getFileInfo(fileHandle: FSFileHandle, path = []): Promise<FileInfo>
+	private static async getFileInfo(fileHandle: FSFileHandle, path = []): Promise<FileInfo>
 	{
-		const file = await fileHandle.getFile();
+		let file = null;
+		
+		if (fileHandle instanceof FileSystemFileEntry)
+			file = await new Promise((ret, err) => fileHandle.file(ret, err));
+		else
+			file = await fileHandle.getFile();
+		
 		return { name: file.name, path, size: file.size, type: file.type, lastModified: file.lastModified };
 	}
 
-	static async getDirectoryInfo(dirHandle: FSDirectoryHandle, path: string[] = []): Promise<DirectoryInfo>
+	private static async getDirectoryInfo(dirHandle: FSDirectoryHandle, path: string[] = []): Promise<DirectoryInfo>
 	{
 		/** @type {{ directories: DirectoryInfo[], files: FileInfo[] }} */
 		const contents: { directories: DirectoryInfo[]; files: FileInfo[]; } = { directories: [], files: [] };
 
-		// @ts-ignore
-		for await (const entry of dirHandle.values())
+		if (dirHandle instanceof FileSystemDirectoryEntry)
 		{
-			switch (entry.kind)
+			const reader = dirHandle.createReader();
+			const entries: FileSystemEntry[] = await new Promise((ret, err) => reader.readEntries(ret, err));
+
+			for (const entry of entries)
 			{
-				case "directory":
+				if (entry.isDirectory)
 					contents.directories.push({ name: entry.name, path: [ ...path, entry.name ] });
-					break;
-				case "file":
-					contents.files.push({ ...await this.getFileInfo(entry), path: [ ...path, entry.name ] });
+				else if (entry.isFile)
+					contents.files.push({ ...await this.getFileInfo(<FileSystemFileEntry>entry), path: [ ...path, entry.name ] });
+			}
+		}
+		else
+		{
+			// @ts-ignore
+			for await (const entry of dirHandle.values())
+			{
+				switch (entry.kind)
+				{
+					case "directory":
+						contents.directories.push({ name: entry.name, path: [ ...path, entry.name ] });
+						break;
+					case "file":
+						contents.files.push({ ...await this.getFileInfo(entry), path: [ ...path, entry.name ] });
+				}
 			}
 		}
 
@@ -140,7 +164,7 @@ class Shared
 		return { name: dirHandle.name, ...contents, path };
 	}
 
-	static async getDirectoryHandle(path: string[] = []): Promise<FSDirectoryHandle | null>
+	private static async getDirectoryHandle(path: string[] = []): Promise<FSDirectoryHandle | null>
 	{
 		if (!path.length)
 			return null;
@@ -152,8 +176,21 @@ class Shared
 		{
 			while (shiftedPath.length)
 			{
-				// @ts-ignore
-				currentDir = await currentDir.getDirectoryHandle(shiftedPath.shift());
+				if (currentDir instanceof FileSystemDirectoryEntry)
+				{
+					try
+					{
+						currentDir = await new Promise((ret, err) => (<FileSystemDirectoryEntry>currentDir).getDirectory(shiftedPath.shift(), {}, ret, err));
+					}
+					catch(err)
+					{
+						console.warn("Directory listning error:", err);
+						return null;
+					}
+				}
+				else
+					// @ts-ignore
+					currentDir = await currentDir.getDirectoryHandle(shiftedPath.shift());
 			}
 
 			return currentDir;
@@ -166,7 +203,7 @@ class Shared
 		return null;
 	}
 
-	static async getFileHandle(path: string[] = []): Promise<FSFileHandle | null>
+	private static async getFileHandle(path: string[] = []): Promise<FSFileHandle | null>
 	{
 		const dirPath = [...path];
 		const fileName = dirPath.pop();
@@ -178,18 +215,32 @@ class Shared
 			return fileHandles[fileName] || null;
 
 		const dirHandle = await this.getDirectoryHandle(dirPath);
-		return await dirHandle?.getFileHandle(fileName) || null;
+
+		if (dirHandle instanceof FileSystemDirectoryEntry)
+		{
+			try
+			{
+				return await new Promise((ret, err) => dirHandle.getFile(fileName, {}, ret, err));
+			}
+			catch(e)
+			{
+				console.warn(e);
+				return null;
+			}
+		}
+		else
+			return await dirHandle?.getFileHandle(fileName) || null;
 	}
 
 	static async getDirectory(path: string[] = []): Promise<DirectoryInfo | null>
 	{
 		if (!path.length)
-		return {
-			directories: await this.directories(),
-			files: await this.files(),
-			path: [],
-			name: "All Files"
-		};
+			return {
+				directories: await this.directories(),
+				files: await this.files(),
+				path: [],
+				name: "All Files"
+			};
 
 		const dirHandle = await this.getDirectoryHandle(path);
 		if (!dirHandle)
@@ -211,6 +262,20 @@ class Shared
 	static async readFile(path: string[] = []): Promise<File | null>
 	{
 		const fileHandle = await this.getFileHandle(path);
+
+		if (fileHandle instanceof FileSystemFileEntry)
+		{
+			try
+			{
+				return await new Promise((ret, err) => fileHandle.file(ret, err));
+			}
+			catch(e)
+			{
+				console.warn(e);
+				return null;
+			}
+		}
+
 		const file = await fileHandle?.getFile();
 
 		return file || null;

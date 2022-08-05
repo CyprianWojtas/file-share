@@ -68,12 +68,29 @@ class FileContainerLocal extends EventObject<Events>
 				if (item.kind === 'file')
 				{
 					// @ts-ignore
-					const entry = await item.getAsFileSystemHandle();
+					if (item.getAsFileSystemHandle)
+					{
+						// @ts-ignore
+						const entry = await item.getAsFileSystemHandle();
 
-					if (entry.kind === 'file')
-						Shared.addFile(entry);
-					else if (entry.kind === 'directory')
-						Shared.addDirectory(entry);
+						if (entry.kind === 'file')
+							Shared.addFile(entry);
+						else if (entry.kind === 'directory')
+							Shared.addDirectory(entry);
+					}
+					else if (item.webkitGetAsEntry)
+					{
+						const entry = item.webkitGetAsEntry();
+
+						if (entry.isFile)
+							Shared.addFile(<FileSystemFileEntry>entry);
+						else if (entry.isDirectory)
+							Shared.addDirectory(<FileSystemDirectoryEntry>entry);
+					}
+					else
+					{
+						prompt("ERROR!\nYour browser does not support file sharing via drag and drop!");
+					}
 				}
 			}
 

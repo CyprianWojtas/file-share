@@ -1,5 +1,6 @@
 import Downloader from "../Downloader.js";
 import { createNodeTree } from "../Utils.js";
+import DownloadStatus from "./DownloadStatus.js";
 import DownloadStatusDirectory from "./DownloadStatusDirectory.js";
 import FileContainer from "./FileContainer.js";
 export default class FileContainerRemote {
@@ -32,9 +33,8 @@ export default class FileContainerRemote {
     async clickFile(file) {
         var _a;
         const fileDownload = this._downloader.downloadFile(file.path);
-        const downloadStatus = document.createElement("download-status");
-        downloadStatus.downloader = fileDownload;
-        (_a = document.querySelector("#downloadList")) === null || _a === void 0 ? void 0 : _a.append(downloadStatus);
+        const downloadStatus = new DownloadStatus(fileDownload);
+        (_a = document.querySelector("#downloadList")) === null || _a === void 0 ? void 0 : _a.append(downloadStatus.element);
     }
     async clickDirectory(directory, e) {
         var _a;

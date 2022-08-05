@@ -1,254 +1,173 @@
-import { DirectoryDownload, FileDownload } from "../Downloader.js";
-import { createElement, createNodeTree, toFileSize } from "../Utils.js";
-
-const downloadStatusStyle =
-`
-:host
-{
-	display: block;
-	padding: 0.5rem;
-	background: #FFF;
-	border-radius: 0.5rem;
-	margin-bottom: 0.5rem;
-}
-.fileName
-{
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-.progressBar
-{
-	background: #EEE;
-	text-align: center;
-	position: relative;
-	border-radius: 0.25rem;
-	overflow: hidden;
-	height: 1rem;
-}
-.progressBarBackground
-{
-	background: #F66;
-	position: absolute;
-	top: 0;
-	left: 0;
-	bottom: 0;
-}
-.progressBar span
-{
-	position: absolute;
-	top: 0;
-	bottom: 0;
-	left: 0;
-	right: 0;
-}
-
-.progressBarBackground.animated
-{
-	background: repeating-linear-gradient(45deg, #F77, #F77 0.5rem, #F55 0.5rem, #F55 1rem);
-	background-size: 2.828427124746190rem;
-	animation: progressAnim 15s linear infinite;
-}
-@keyframes progressAnim
-{
-	100%
-	{
-		background-position: 100% 100%;
-	}
-}
-button.close
-{
-	display: none;
-	float: right;
-	border: 1px solid #AAA;
-	font-family: inherit;
-	font-size: inherit;
-	padding: 0 0.25rem;
-	vertical-align: middle;
-	margin-left: 0.25rem;
-	background: #EEE;
-	border-radius: 0.25rem;
-	box-sizing: border-box;
-	line-height: 1rem;
-	height: 1rem;
-}
-.finished button.close
-{
-	display: inline-block;
-}
-`;
-
-export class DownloadStatus extends HTMLElement
-{
-	rootElement: HTMLElement;
-
-	private _downloader: FileDownload | DirectoryDownload;
-
-	private _fileNameEl: HTMLElement;
-	private _progressBarBackgroundEl: HTMLElement;
-	private _progressBarTextEl: HTMLElement;
-	private _progressBarSizeEl: HTMLElement;
-	private _progressBarEl: HTMLElement;
-
-	private _fileName: string;
-	private _progress: number;
-	private _speed: number;
-	private _total: number;
-
-	constructor()
-	{
-		super();
-
-		const shadow = this.attachShadow({ mode: "closed" });
-		const style = document.createElement("style");
-		style.innerHTML = downloadStatusStyle;
-
-		this._fileNameEl = createElement("div", { class: "fileName" });
-
-		this._progressBarBackgroundEl = createElement("div", { class: "progressBarBackground" });
-		this._progressBarTextEl = createElement("span");
-		this._progressBarSizeEl = createElement("div");
-		this._progressBarEl = createNodeTree(
-		{
-			name: "div", attributes: { class: "progressBar" },
-			childNodes:
-			[
-				this._progressBarBackgroundEl,
-				this._progressBarTextEl
-			]
-		});
-
-		this.rootElement = createNodeTree(
-		{
-			name: "div", attributes: { class: "downloadStatus" },
-			childNodes:
-			[
-				this._fileNameEl,
-				{
-					name: "button", attributes: { class: "close" }, childNodes: [ "×" ],
-					listeners: { click: () => this.remove() }
-				},
-				this._progressBarEl,
-				this._progressBarSizeEl
-			]
-		});
-
-		this._progress = 0;
-		this._speed = 0;
-
-		this.total = 1;
-
-
-		shadow.append(style, this.rootElement);
-	}
-
-	get fileName() { return this._fileName; }
-
-	set fileName(newName: string)
-	{
-		this._fileName = newName;
-		this._fileNameEl.innerHTML = "";
-		this._fileNameEl.append(newName);
-	}
-
-	get progress() { return this._progress; }
-
-	set progress(value)
-	{
-		this._progress = value;
-		this._progressBarSizeEl.innerHTML = `${ toFileSize(this._progress) } / ${ toFileSize(this._total) }`;
-		this.updateProgressBar();
-	}
-
-	get total() { return this._total; }
-
-	set total(value)
-	{
-		this._total = value;
-		this._progressBarSizeEl.innerHTML = `${ toFileSize(this._progress) } / ${ toFileSize(this._total) }`;
-		this.updateProgressBar();
-	}
-
-	get speed() { return this._speed; }
-
-	set speed(value)
-	{
-		this._speed = value;
-		this.updateProgressBar();
-	}
-
-	get downloader() { return this._downloader; }
-
-	set downloader(newDownloader: FileDownload | DirectoryDownload)
-	{
-		this._downloader = newDownloader;
-		this.bindStatusUpdates();
-	}
-
-	updateProgressBar()
-	{
-		this._progressBarBackgroundEl.classList.remove("animated");
-		this._progressBarEl.classList.remove("customStatus");
-		this._progressBarTextEl.innerHTML = "";
-		this._progressBarTextEl.append((this._progress / this._total * 100).toFixed(2) + "% — " + toFileSize(this._speed) + "/s");
-		this._progressBarBackgroundEl.style.width = `${ this._progress / this._total * 100 }%`;
-	}
-
-	customProgressStatus(status, finished = false, width = 100)
-	{
-		if (finished)
-			this.rootElement.classList.add("finished");
-		else
-			this.rootElement.classList.remove("finished");
-		this._progressBarEl.classList.add("customStatus");
-
-		this._progressBarTextEl.innerHTML = "";
-		this._progressBarTextEl.append(status);
-		this._progressBarBackgroundEl.style.width = `${ width }%`;
-		if (!finished)
-			this._progressBarBackgroundEl.classList.add("animated");
-		else
-			this._progressBarBackgroundEl.classList.remove("animated");
-		
-	}
-
-	//===== Handling download status responses =====//
-	bindStatusUpdates()
-	{
-		this._downloader.on("fileInfo", fileInfo =>
-		{
-			this.total = fileInfo.size;
-			this.fileName = fileInfo.name;
-
-			this.customProgressStatus("Waiting for download...", false, 0);
-		});
-
-		this._downloader.on("progress", progress =>
-		{
-			this.progress = progress.current;
-			this.total    = progress.total;
-			this.speed    = progress.speed;
-		});
-
-		this._downloader.on("savingToFile", () =>
-		{
-			this.customProgressStatus("Saving to file...", false);
-		});
-
-		this._downloader.on("finished", () =>
-		{
-			this.customProgressStatus("Finished!", true);
-		});
-
-		this._downloader.on("savingNotPermitted", () =>
-		{
-			this.rootElement.remove();
-		});
-	}
-}
+import { FileDownload } from "../Downloader.js";
+import { FileInfo } from "../Shared.js";
+import { createNodeTree, toFileSize } from "../Utils.js";
 
 export default
-function registerContextMenu()
+class DownloadStatus
 {
-	customElements.define('download-status', DownloadStatus);
+	element: HTMLElement;
+
+	private _fileDownload: FileDownload;
+	private _elHooks:
+	{
+		fileName: HTMLElement,
+		fileSize: HTMLElement,
+
+		progressText: HTMLElement,
+		progresBg: HTMLElement,
+
+		speed: HTMLElement,
+		size: HTMLElement
+	};
+
+	private _name: string;
+	private _progress: number | string;
+	private _size: number;
+	private _speed: number;
+
+	constructor(fileDownload: FileDownload)
+	{
+		this._fileDownload = fileDownload;
+
+		this.element = createNodeTree(
+		{
+			name: "div", attributes: { class: "downloadStatus fileDownload" },
+			childNodes:
+			[
+				{ name: "button", attributes: { class: "close" }, listeners: { click: () => this.element.remove() } },
+				{ name: "div", attributes: { class: "fileName" }, childNodes: [ " " ] },
+				{
+					name: "div", attributes: { class: "progressBar" },
+					childNodes:
+					[
+						{ name: "div", attributes: { class: "progressBarBg" } },
+						{ name: "span", childNodes: [ "Waiting for download..." ] }
+					]
+				},
+				{
+					name: "div", attributes: { class: "footer" },
+					childNodes:
+					[
+						{ name: "div", attributes: { class: "downloadSpeed" }, childNodes: [ "0 B/s" ] },
+						{ name: "div", attributes: { class: "totalSize" }, childNodes: [ " " ] }
+					]
+				}
+			]
+		});
+
+		this._elHooks =
+		{
+			fileName: this.element.querySelector(".fileName"),
+			fileSize: this.element.querySelector(".fileSize"),
+	
+			progressText: this.element.querySelector(".progressBar span"),
+			progresBg:    this.element.querySelector(".progressBar .progressBarBg"),
+	
+			speed: this.element.querySelector(".downloadSpeed"),
+			size:  this.element.querySelector(".totalSize")
+		};
+
+		this.bindEvents();
+	}
+
+	set fileName(newValue: string)
+	{
+		if (this._name == newValue)
+			return;
+
+		this._name = newValue;
+		this._elHooks.fileName.innerHTML = "";
+		this._elHooks.fileName.title = newValue;
+		this._elHooks.fileName.append(newValue);
+	}
+
+	set progress(newValue: number | string)
+	{
+		if (this._progress == newValue)
+			return;
+
+		this._progress = newValue;
+		
+		if (typeof newValue == "number")
+		{
+			this._elHooks.size.innerHTML = "";
+			this._elHooks.size.append(`${ toFileSize(newValue) } / ${ toFileSize(this._size) }`);
+
+			this._elHooks.progressText.innerHTML = "";
+			this._elHooks.progressText.append(`${ (newValue / this._size * 100).toFixed(2) }%`);
+			this._elHooks.progresBg.style.width = `${ newValue / this._size * 100 }%`;
+			this._elHooks.progresBg.classList.remove("animation");
+		}
+		else
+		{
+			this._elHooks.progressText.innerHTML = "";
+			this._elHooks.progresBg.style.width = "100%";
+
+			switch(newValue)
+			{
+				case "saving":
+					this._elHooks.progressText.append("Saving to file...");
+					this._elHooks.progresBg.classList.add("animation");
+					break;
+				case "finished":
+					this._elHooks.progressText.append("Finished!");
+					this._elHooks.progresBg.classList.remove("animation");
+					break;
+				default:
+					this._elHooks.progressText.append(newValue);
+					this._elHooks.progresBg.classList.add("animation");
+					break;
+			}
+		}
+	}
+
+	set size(newValue: number)
+	{
+		if (this._size == newValue)
+			return;
+
+		this._size = newValue;
+		this._elHooks.size.innerHTML = "";
+		if (typeof this._progress == "number")
+			this._elHooks.size.append(`${ toFileSize(this._progress) } / ${ toFileSize(this._size) }`);
+	}
+
+	set speed(newValue: number)
+	{
+		if (this._speed == newValue)
+			return;
+
+		this._speed = newValue;
+		this._elHooks.speed.innerHTML = "";
+		this._elHooks.speed.append(`${ toFileSize(newValue) }/s`);
+	}
+
+	private bindEvents()
+	{
+		this._fileDownload.on("fileInfo", (fileInfo: FileInfo) =>
+		{
+			this.fileName = fileInfo.name;
+			this.size = fileInfo.size;
+		});
+
+		this._fileDownload.on("savingToFile", () =>
+		{
+			this.progress = "saving";
+		});
+
+		this._fileDownload.on("progress", progress =>
+		{
+			this.size = progress.total;
+			this.progress = progress.current;
+
+			this.speed = progress.speed;
+		});
+
+		this._fileDownload.on("finished", () =>
+		{
+			this.progress = "finished";
+		});
+
+		this._fileDownload.on("savingNotPermitted", () => this.element.remove());
+	}
 }

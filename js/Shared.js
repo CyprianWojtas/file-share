@@ -29,64 +29,82 @@ export default class Shared {
         dirList.sort((a, b) => a.name > b.name ? 1 : a.name == b.name ? 0 : -1);
         return dirList;
     }
+    /** File System API required */
     static async requestFile() {
         try {
             // @ts-ignore
             const handles = await showOpenFilePicker({ multiple: true });
             for (let fileHandle of handles)
                 this.addFile(fileHandle);
-            return handles;
+            return true;
         }
         catch (e) {
             console.warn(e);
-            return null;
+            return false;
         }
     }
     static addFile(fileHandle) {
         fileHandles[shareId++] = fileHandle;
     }
+    /** File System API required */
     static async requestDirectory() {
         try {
             // @ts-ignore
             let dirHandle = await showDirectoryPicker();
             this.addDirectory(dirHandle);
-            return dirHandle;
+            return true;
         }
         catch (e) {
             console.warn(e);
-            return null;
+            return false;
         }
     }
     static addDirectory(fileHandle) {
         directoryHandles[shareId++] = fileHandle;
     }
     static async getFileInfo(fileHandle, path = []) {
-        const file = await fileHandle.getFile();
+        let file = null;
+        if (fileHandle instanceof FileSystemFileEntry)
+            file = await new Promise((ret, err) => fileHandle.file(ret, err));
+        else
+            file = await fileHandle.getFile();
         return { name: file.name, path, size: file.size, type: file.type, lastModified: file.lastModified };
     }
     static async getDirectoryInfo(dirHandle, path = []) {
         var e_1, _a;
         /** @type {{ directories: DirectoryInfo[], files: FileInfo[] }} */
         const contents = { directories: [], files: [] };
-        try {
-            // @ts-ignore
-            for (var _b = __asyncValues(dirHandle.values()), _c; _c = await _b.next(), !_c.done;) {
-                const entry = _c.value;
-                switch (entry.kind) {
-                    case "directory":
-                        contents.directories.push({ name: entry.name, path: [...path, entry.name] });
-                        break;
-                    case "file":
-                        contents.files.push(Object.assign(Object.assign({}, await this.getFileInfo(entry)), { path: [...path, entry.name] }));
-                }
+        if (dirHandle instanceof FileSystemDirectoryEntry) {
+            const reader = dirHandle.createReader();
+            const entries = await new Promise((ret, err) => reader.readEntries(ret, err));
+            for (const entry of entries) {
+                if (entry.isDirectory)
+                    contents.directories.push({ name: entry.name, path: [...path, entry.name] });
+                else if (entry.isFile)
+                    contents.files.push(Object.assign(Object.assign({}, await this.getFileInfo(entry)), { path: [...path, entry.name] }));
             }
         }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
+        else {
             try {
-                if (_c && !_c.done && (_a = _b.return)) await _a.call(_b);
+                // @ts-ignore
+                for (var _b = __asyncValues(dirHandle.values()), _c; _c = await _b.next(), !_c.done;) {
+                    const entry = _c.value;
+                    switch (entry.kind) {
+                        case "directory":
+                            contents.directories.push({ name: entry.name, path: [...path, entry.name] });
+                            break;
+                        case "file":
+                            contents.files.push(Object.assign(Object.assign({}, await this.getFileInfo(entry)), { path: [...path, entry.name] }));
+                    }
+                }
             }
-            finally { if (e_1) throw e_1.error; }
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (_c && !_c.done && (_a = _b.return)) await _a.call(_b);
+                }
+                finally { if (e_1) throw e_1.error; }
+            }
         }
         contents.files.sort((a, b) => a.name > b.name ? 1 : a.name == b.name ? 0 : -1);
         contents.directories.sort((a, b) => a.name > b.name ? 1 : a.name == b.name ? 0 : -1);
@@ -99,8 +117,18 @@ export default class Shared {
         let currentDir = directoryHandles[shiftedPath.shift() || ""];
         try {
             while (shiftedPath.length) {
-                // @ts-ignore
-                currentDir = await currentDir.getDirectoryHandle(shiftedPath.shift());
+                if (currentDir instanceof FileSystemDirectoryEntry) {
+                    try {
+                        currentDir = await new Promise((ret, err) => currentDir.getDirectory(shiftedPath.shift(), {}, ret, err));
+                    }
+                    catch (err) {
+                        console.warn("Directory listning error:", err);
+                        return null;
+                    }
+                }
+                else
+                    // @ts-ignore
+                    currentDir = await currentDir.getDirectoryHandle(shiftedPath.shift());
             }
             return currentDir;
         }
@@ -117,7 +145,17 @@ export default class Shared {
         if (!dirPath.length)
             return fileHandles[fileName] || null;
         const dirHandle = await this.getDirectoryHandle(dirPath);
-        return await (dirHandle === null || dirHandle === void 0 ? void 0 : dirHandle.getFileHandle(fileName)) || null;
+        if (dirHandle instanceof FileSystemDirectoryEntry) {
+            try {
+                return await new Promise((ret, err) => dirHandle.getFile(fileName, {}, ret, err));
+            }
+            catch (e) {
+                console.warn(e);
+                return null;
+            }
+        }
+        else
+            return await (dirHandle === null || dirHandle === void 0 ? void 0 : dirHandle.getFileHandle(fileName)) || null;
     }
     static async getDirectory(path = []) {
         if (!path.length)
@@ -140,6 +178,15 @@ export default class Shared {
     }
     static async readFile(path = []) {
         const fileHandle = await this.getFileHandle(path);
+        if (fileHandle instanceof FileSystemFileEntry) {
+            try {
+                return await new Promise((ret, err) => fileHandle.file(ret, err));
+            }
+            catch (e) {
+                console.warn(e);
+                return null;
+            }
+        }
         const file = await (fileHandle === null || fileHandle === void 0 ? void 0 : fileHandle.getFile());
         return file || null;
     }

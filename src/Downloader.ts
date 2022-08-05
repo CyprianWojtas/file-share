@@ -1,7 +1,13 @@
 import Connection from "./Connection.js";
 import EventObject from "./EventObject.js";
-import { DirectoryInfo, FileInfo, FSDirectoryHandle, FSFileHandle } from "./Shared.js";
+import { DirectoryInfo, FileInfo } from "./Shared.js";
 import { toFileSize } from "./Utils.js";
+
+// @ts-ignore
+type FSDirectoryHandle = FileSystemDirectoryHandle;
+// @ts-ignore
+type FSFileHandle = FileSystemFileHandle;
+
 
 /** size of chunk of uploaded data */
 const CHUNK_SIZE: number = 1048576; // 1 MB
