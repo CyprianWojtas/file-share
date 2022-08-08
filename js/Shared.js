@@ -64,7 +64,7 @@ export default class Shared {
     }
     static async getFileInfo(fileHandle, path = []) {
         let file = null;
-        if (fileHandle instanceof FileSystemFileEntry)
+        if (typeof FileSystemFileEntry != "undefined" && fileHandle instanceof FileSystemFileEntry)
             file = await new Promise((ret, err) => fileHandle.file(ret, err));
         else
             file = await fileHandle.getFile();
@@ -74,7 +74,7 @@ export default class Shared {
         var e_1, _a;
         /** @type {{ directories: DirectoryInfo[], files: FileInfo[] }} */
         const contents = { directories: [], files: [] };
-        if (dirHandle instanceof FileSystemDirectoryEntry) {
+        if (typeof FileSystemDirectoryEntry != "undefined" && dirHandle instanceof FileSystemDirectoryEntry) {
             const reader = dirHandle.createReader();
             const entries = await new Promise((ret, err) => reader.readEntries(ret, err));
             for (const entry of entries) {
@@ -117,7 +117,7 @@ export default class Shared {
         let currentDir = directoryHandles[shiftedPath.shift() || ""];
         try {
             while (shiftedPath.length) {
-                if (currentDir instanceof FileSystemDirectoryEntry) {
+                if (typeof FileSystemDirectoryEntry != "undefined" && currentDir instanceof FileSystemDirectoryEntry) {
                     try {
                         currentDir = await new Promise((ret, err) => currentDir.getDirectory(shiftedPath.shift(), {}, ret, err));
                     }
@@ -138,6 +138,7 @@ export default class Shared {
         return null;
     }
     static async getFileHandle(path = []) {
+        var _a;
         const dirPath = [...path];
         const fileName = dirPath.pop();
         if (!fileName)
@@ -145,7 +146,7 @@ export default class Shared {
         if (!dirPath.length)
             return fileHandles[fileName] || null;
         const dirHandle = await this.getDirectoryHandle(dirPath);
-        if (dirHandle instanceof FileSystemDirectoryEntry) {
+        if (typeof FileSystemDirectoryEntry != "undefined" && dirHandle instanceof FileSystemDirectoryEntry) {
             try {
                 return await new Promise((ret, err) => dirHandle.getFile(fileName, {}, ret, err));
             }
@@ -155,7 +156,7 @@ export default class Shared {
             }
         }
         else
-            return await (dirHandle === null || dirHandle === void 0 ? void 0 : dirHandle.getFileHandle(fileName)) || null;
+            return await ((_a = dirHandle) === null || _a === void 0 ? void 0 : _a.getFileHandle(fileName)) || null;
     }
     static async getDirectory(path = []) {
         if (!path.length)
@@ -177,8 +178,9 @@ export default class Shared {
         return null;
     }
     static async readFile(path = []) {
+        var _a;
         const fileHandle = await this.getFileHandle(path);
-        if (fileHandle instanceof FileSystemFileEntry) {
+        if (typeof FileSystemFileEntry != "undefined" && fileHandle instanceof FileSystemFileEntry) {
             try {
                 return await new Promise((ret, err) => fileHandle.file(ret, err));
             }
@@ -187,7 +189,7 @@ export default class Shared {
                 return null;
             }
         }
-        const file = await (fileHandle === null || fileHandle === void 0 ? void 0 : fileHandle.getFile());
+        const file = await ((_a = fileHandle) === null || _a === void 0 ? void 0 : _a.getFile());
         return file || null;
     }
 }

@@ -1,9 +1,13 @@
 // tsc does not undersand what these are
 // bruh.
 // @ts-ignore
-export type FSDirectoryHandle = FileSystemDirectoryHandle | FileSystemDirectoryEntry;
+export type FSDirectoryEH = FileSystemDirectoryHandle | FileSystemDirectoryEntry;
 // @ts-ignore
-export type FSFileHandle = FileSystemFileHandle | FileSystemFileEntry;
+export type FSFileEH = FileSystemFileHandle | FileSystemFileEntry;
+// @ts-ignore
+export type FSDirectoryHandle = FileSystemDirectoryHandle;
+// @ts-ignore
+export type FSFileHandle = FileSystemFileHandle;
 
 export interface FileInfo
 {
@@ -23,8 +27,8 @@ export interface DirectoryInfo
 }
 
 
-const fileHandles:      { [key: string]: FSFileHandle;      } = {};
-const directoryHandles: { [key: string]: FSDirectoryHandle; } = {};
+const fileHandles:      { [key: string]: FSFileEH;      } = {};
+const directoryHandles: { [key: string]: FSDirectoryEH; } = {};
 
 let shareId = 1;
 
@@ -70,7 +74,7 @@ class Shared
 		try
 		{
 			// @ts-ignore
-			const handles: FSFileHandle[] = await showOpenFilePicker({ multiple: true });
+			const handles: FSFileEH[] = await showOpenFilePicker({ multiple: true });
 
 			for (let fileHandle of handles)
 				this.addFile(fileHandle);
@@ -84,7 +88,7 @@ class Shared
 		}
 	}
 
-	static addFile(fileHandle: FSFileHandle): void
+	static addFile(fileHandle: FSFileEH): void
 	{
 		fileHandles[shareId++] = fileHandle;
 	}
@@ -95,7 +99,7 @@ class Shared
 		try
 		{
 			// @ts-ignore
-			let dirHandle: FSDirectoryHandle = await showDirectoryPicker();
+			let dirHandle: FSDirectoryEH = await showDirectoryPicker();
 			this.addDirectory(dirHandle);
 
 			return true;
@@ -107,29 +111,29 @@ class Shared
 		}
 	}
 
-	static addDirectory(fileHandle: FSDirectoryHandle): void
+	static addDirectory(fileHandle: FSDirectoryEH): void
 	{
 		directoryHandles[shareId++] = fileHandle;
 	}
 
-	private static async getFileInfo(fileHandle: FSFileHandle, path = []): Promise<FileInfo>
+	private static async getFileInfo(fileHandle: FSFileEH, path = []): Promise<FileInfo>
 	{
 		let file = null;
 		
-		if (fileHandle instanceof FileSystemFileEntry)
+		if (typeof FileSystemFileEntry != "undefined" && fileHandle instanceof FileSystemFileEntry)
 			file = await new Promise((ret, err) => fileHandle.file(ret, err));
 		else
-			file = await fileHandle.getFile();
+			file = await (<FSFileHandle>fileHandle).getFile();
 		
 		return { name: file.name, path, size: file.size, type: file.type, lastModified: file.lastModified };
 	}
 
-	private static async getDirectoryInfo(dirHandle: FSDirectoryHandle, path: string[] = []): Promise<DirectoryInfo>
+	private static async getDirectoryInfo(dirHandle: FSDirectoryEH, path: string[] = []): Promise<DirectoryInfo>
 	{
 		/** @type {{ directories: DirectoryInfo[], files: FileInfo[] }} */
 		const contents: { directories: DirectoryInfo[]; files: FileInfo[]; } = { directories: [], files: [] };
 
-		if (dirHandle instanceof FileSystemDirectoryEntry)
+		if (typeof FileSystemDirectoryEntry != "undefined" && dirHandle instanceof FileSystemDirectoryEntry)
 		{
 			const reader = dirHandle.createReader();
 			const entries: FileSystemEntry[] = await new Promise((ret, err) => reader.readEntries(ret, err));
@@ -164,7 +168,7 @@ class Shared
 		return { name: dirHandle.name, ...contents, path };
 	}
 
-	private static async getDirectoryHandle(path: string[] = []): Promise<FSDirectoryHandle | null>
+	private static async getDirectoryHandle(path: string[] = []): Promise<FSDirectoryEH | null>
 	{
 		if (!path.length)
 			return null;
@@ -176,7 +180,7 @@ class Shared
 		{
 			while (shiftedPath.length)
 			{
-				if (currentDir instanceof FileSystemDirectoryEntry)
+				if (typeof FileSystemDirectoryEntry != "undefined" && currentDir instanceof FileSystemDirectoryEntry)
 				{
 					try
 					{
@@ -203,7 +207,7 @@ class Shared
 		return null;
 	}
 
-	private static async getFileHandle(path: string[] = []): Promise<FSFileHandle | null>
+	private static async getFileHandle(path: string[] = []): Promise<FSFileEH | null>
 	{
 		const dirPath = [...path];
 		const fileName = dirPath.pop();
@@ -216,7 +220,7 @@ class Shared
 
 		const dirHandle = await this.getDirectoryHandle(dirPath);
 
-		if (dirHandle instanceof FileSystemDirectoryEntry)
+		if (typeof FileSystemDirectoryEntry != "undefined" && dirHandle instanceof FileSystemDirectoryEntry)
 		{
 			try
 			{
@@ -229,7 +233,7 @@ class Shared
 			}
 		}
 		else
-			return await dirHandle?.getFileHandle(fileName) || null;
+			return await (<FSDirectoryHandle>dirHandle)?.getFileHandle(fileName) || null;
 	}
 
 	static async getDirectory(path: string[] = []): Promise<DirectoryInfo | null>
@@ -263,7 +267,7 @@ class Shared
 	{
 		const fileHandle = await this.getFileHandle(path);
 
-		if (fileHandle instanceof FileSystemFileEntry)
+		if (typeof FileSystemFileEntry != "undefined" && fileHandle instanceof FileSystemFileEntry)
 		{
 			try
 			{
@@ -276,7 +280,7 @@ class Shared
 			}
 		}
 
-		const file = await fileHandle?.getFile();
+		const file = await (<FSFileHandle>fileHandle)?.getFile();
 
 		return file || null;
 	}
